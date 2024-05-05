@@ -19,7 +19,7 @@ class _GraphAlgorithmState extends State<GraphAlgorithm> {
   List<List<bool>> g = List.generate(24, (index) => List.generate(24, (index) => m.Random().nextBool()));
   Maze maze = Maze(24, 24); // Create a 24X24 maze
   bool run = false;
-  List<bool> runs = List.filled(4, false);
+  List<bool> runs = List.filled(7, false);
   @override
   void initState() {
     super.initState();
@@ -137,6 +137,9 @@ class _GraphAlgorithmState extends State<GraphAlgorithm> {
                                 // If not visited
                                 parent[key] = {'x': x, 'y': y}; // Set parent for path reconstruction
                                 queue.add({'x': nx, 'y': ny}); // Add to the queue for exploration
+                                setState(() {
+                                  maze.cells[ny][nx].color = Colors.blue;
+                                });
                               }
                             }
                           }
@@ -225,7 +228,10 @@ class _GraphAlgorithmState extends State<GraphAlgorithm> {
                                 if (!parent.containsKey(key)) {
                                   // If not visited
                                   parent[key] = {'x': x, 'y': y}; // Set parent for path reconstruction
-                                  stack.push({'x': nx, 'y': ny}); // Add to the queue for exploration
+                                  stack.push({'x': nx, 'y': ny}); // Add to the stack for exploration
+                                  setState(() {
+                                    maze.cells[ny][nx].color = Colors.blue;
+                                  });
                                 }
                               }
                             }
@@ -272,7 +278,7 @@ class _GraphAlgorithmState extends State<GraphAlgorithm> {
                         List<Map<String, int>> path = [];
                         String current = '$endX,$endY';
 
-                        while (current.isNotEmpty) {
+                        while (current.isNotEmpty && run) {
                           final parts = current.split(',');
                           final x = int.parse(parts[0]);
                           final y = int.parse(parts[1]);
@@ -310,7 +316,7 @@ class _GraphAlgorithmState extends State<GraphAlgorithm> {
 
                         queue.add({'x': startX, 'y': startY, 'f': fScore[startKey]});
 
-                        while (queue.isNotEmpty) {
+                        while (queue.isNotEmpty && run) {
                           final current = queue.removeFirst();
                           final x = current['x']!;
                           final y = current['y']!;
@@ -327,6 +333,7 @@ class _GraphAlgorithmState extends State<GraphAlgorithm> {
                           final neighbors = maze.getNeighbors(x, y);
 
                           for (final neighbor in neighbors) {
+                            if (!run) break;
                             final nx = neighbor['x']!;
                             final ny = neighbor['y']!;
                             final direction = neighbor['dir']!;
@@ -347,6 +354,9 @@ class _GraphAlgorithmState extends State<GraphAlgorithm> {
                                 fScore[key] = tentativeGScore + heuristic(nx, ny, endX, endY); // Total cost
 
                                 queue.add({'x': nx, 'y': ny, 'f': fScore[key]});
+                                setState(() {
+                                  maze.cells[ny][nx].color = Colors.blue;
+                                });
                               }
                             }
                           }
@@ -370,9 +380,9 @@ class _GraphAlgorithmState extends State<GraphAlgorithm> {
                     run: runs[2],
                     title: 'A*',
                   ),
-                  // USC
+                  // UCS
                   GraphAlgorithmButton(
-                    onTap: () {
+                    onTap: () async {
                       setState(() {
                         run = true;
                         runs[3] = true;
@@ -382,14 +392,217 @@ class _GraphAlgorithmState extends State<GraphAlgorithm> {
                           }
                         }
                       });
-                      //USC Algorithm
+                      //UCS Algorithm
+                      // Function to reconstruct the path from parent map
+                      Future<List<Map<String, int>>> _reconstructPath(Map<String, Map<String, int>> parent, int startX, int startY, int endX, endY) async {
+                        List<Map<String, int>> path = [];
+                        String current = '$endX,$endY';
+
+                        while (current.isNotEmpty && run) {
+                          final parts = current.split(',');
+                          final x = int.parse(parts[0]);
+                          final y = int.parse(parts[1]);
+                          maze.cells[y][x].color = Colors.green;
+                          setState(() {});
+                          await Future.delayed(const Duration(milliseconds: 50));
+                          path.add({'x': x, 'y': y});
+
+                          if (x == startX && y == startY) {
+                            break; // Reached the start
+                          }
+
+                          current = '${parent[current]!['x']},${parent[current]!['y']}';
+                        }
+
+                        path = path.reversed.toList(); // Reverse to get the correct order
+                        return path;
+                      }
+
+                      Future<List<Map<String, int>>> findPath(Maze maze, int startX, int startY, int endX, int endY) async {
+                        PriorityQueue<Map<String, dynamic>> queue = PriorityQueue(
+                          (a, b) => a['cost'] - b['cost'], // Priority queue sorted by cost
+                        );
+                        Map<String, int> cost = {}; // Cumulative cost from the start
+                        Map<String, Map<String, int>> parent = {}; // Track parent nodes for path reconstruction
+
+                        String startKey = '$startX,$startY';
+                        String endKey = '$endX,$endY';
+
+                        cost[startKey] = 0; // Starting cost
+                        queue.add({'x': startX, 'y': startY, 'cost': cost[startKey]});
+
+                        while (queue.isNotEmpty && run) {
+                          final current = queue.removeFirst();
+                          final x = current['x']!;
+                          final y = current['y']!;
+                          setState(() {
+                            maze.cells[y][x].color = Colors.red;
+                          });
+
+                          // If we reach the endpoint, reconstruct the path
+                          if (x == endX && y == endY) {
+                            return _reconstructPath(parent, startX, startY, endX, endY);
+                          }
+
+                          // Get neighbors of the current cell
+                          final neighbors = maze.getNeighbors(x, y);
+
+                          for (final neighbor in neighbors) {
+                            if (!run) break;
+                            final nx = neighbor['x']!;
+                            final ny = neighbor['y']!;
+                            final direction = neighbor['dir']!;
+
+                            // Check if there's a passage to the neighbor
+                            if ((direction == 0 && maze.cells[y][x].top) ||
+                                (direction == 1 && maze.cells[y][x].right) ||
+                                (direction == 2 && maze.cells[y][x].bottom) ||
+                                (direction == 3 && maze.cells[y][x].left)) {
+                              final key = '$nx,$ny';
+
+                              int tentativeCost = cost['$x,$y']! + 1; // Uniform cost for each step
+
+                              if (!cost.containsKey(key) || tentativeCost < cost[key]!) {
+                                parent[key] = {'x': x, 'y': y}; // Set parent for path reconstruction
+
+                                cost[key] = tentativeCost;
+                                queue.add({'x': nx, 'y': ny, 'cost': cost[key]});
+                                setState(() {
+                                  maze.cells[ny][nx].color = Colors.blue;
+                                });
+                              }
+                            }
+                          }
+
+                          await Future.delayed(const Duration(milliseconds: 100)); // Delay for visualization
+                          setState(() {
+                            maze.cells[y][x].color = Colors.yellow;
+                          });
+                        }
+
+                        return []; // If no path is found
+                      }
+
+                      await findPath(maze, 0, 0, 23, 23);
+
                       setState(() {
                         run = false;
                         runs[3] = false;
                       });
                     },
                     run: runs[3],
-                    title: 'USC',
+                    title: 'UCS',
+                  ),
+                  // Greedy
+                  GraphAlgorithmButton(
+                    // Not Working in Color red yellow green blue
+                    onTap: () async {
+                      setState(() {
+                        run = true;
+                        runs[4] = true;
+                        for (var cells in maze.cells) {
+                          for (var cell in cells) {
+                            cell.color = Colors.white;
+                          }
+                        }
+                      });
+                      int manhattanDistance(int x1, int y1, int x2, int y2) {
+                        return (x1 - x2).abs() + (y1 - y2).abs();
+                      }
+
+                      Future<List<Map<String, int>>> findPath(Maze maze, int startX, int startY, int endX, int endY) async {
+                        List<Map<String, int>> path = []; // To store the path
+                        Set<String> visited = {}; // To track visited cells
+
+                        int currentX = startX;
+                        int currentY = startY;
+                        visited.add('$currentX,$currentY'); // Mark start as visited
+                        path.add({'x': currentX, 'y': currentY});
+
+                        while ((currentX != endX || currentY != endY) && run) {
+                          // Get neighbors and choose the one that minimizes the distance to the goal
+                          setState(() {
+                            maze.cells[currentY][currentX].color = Colors.red;
+                          });
+                          await Future.delayed(const Duration(milliseconds: 100));
+                          final neighbors = maze.getNeighbors(currentX, currentY);
+
+                          neighbors.sort((a, b) {
+                            int distA = manhattanDistance(a['x']!, a['y']!, endX, endY);
+                            int distB = manhattanDistance(b['x']!, b['y']!, endX, endY);
+                            return distA - distB; // Sort by closest distance to the goal
+                          });
+
+                          bool found = false;
+                          for (final neighbor in neighbors) {
+                            if (!run) break;
+                            final nx = neighbor['x']!;
+                            final ny = neighbor['y']!;
+                            final direction = neighbor['dir']!;
+
+                            // Check if there's a passage and the neighbor is not visited
+                            if ((direction == 0 && maze.cells[currentY][currentX].top) ||
+                                (direction == 1 && maze.cells[currentY][currentX].right) ||
+                                (direction == 2 && maze.cells[currentY][currentX].bottom) ||
+                                (direction == 3 && maze.cells[currentY][currentX].left)) {
+                              final key = '$nx,$ny';
+
+                              if (!visited.contains(key)) {
+                                setState(() {
+                                  maze.cells[currentY][currentX].color = Colors.yellow;
+                                });
+                                // Ensure it's not visited
+                                visited.add(key);
+                                path.add({'x': nx, 'y': ny});
+                                currentX = nx;
+                                currentY = ny;
+                                found = true;
+
+                                break; // Move to the next cell
+                              }
+                            }
+                          }
+
+                          if (!found) {
+                            // If no new direction, backtrack (should not happen in a well-constructed maze)
+                            path.removeLast(); // Remove the last step
+                            if (path.isEmpty) {
+                              break; // No path found
+                            }
+                            setState(() {
+                              maze.cells[currentY][currentX].color = Colors.yellow;
+                            });
+                            final lastStep = path.last;
+                            currentX = lastStep['x']!;
+                            currentY = lastStep['y']!;
+                            setState(() {
+                              maze.cells[currentY][currentX].color = Colors.red;
+                            });
+                          }
+                        }
+
+                        for (var cell in path) {
+                          if (!run) break;
+                          int x = cell['x']!;
+                          int y = cell['y']!;
+                          setState(() {
+                            maze.cells[y][x].color = Colors.green;
+                          });
+                          await Future.delayed(const Duration(milliseconds: 50));
+                        }
+
+                        return path; // Return the path
+                      }
+
+                      await findPath(maze, 0, 0, 23, 23);
+
+                      setState(() {
+                        run = false;
+                        runs[4] = false;
+                      });
+                    },
+                    run: runs[4],
+                    title: 'Greedy',
                   ),
                 ],
               ),
