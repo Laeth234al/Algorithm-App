@@ -274,7 +274,7 @@ class _GraphAlgorithmState extends State<GraphAlgorithm> {
                         return (x1 - x2).abs() + (y1 - y2).abs(); // Manhattan distance
                       }
 
-                      Future<List<Map<String, int>>> _reconstructPath(Map<String, Map<String, int>> parent, int startX, int startY, int endX, int endY) async {
+                      Future<List<Map<String, int>>> reconstructPath(Map<String, Map<String, int>> parent, int startX, int startY, int endX, int endY) async {
                         List<Map<String, int>> path = [];
                         String current = '$endX,$endY';
 
@@ -309,7 +309,7 @@ class _GraphAlgorithmState extends State<GraphAlgorithm> {
                         Map<String, Map<String, int>> parent = {}; // Track parent nodes
 
                         String startKey = '$startX,$startY';
-                        String endKey = '$endX,$endY';
+                        // String endKey = '$endX,$endY';
 
                         gScore[startKey] = 0; // Cost to reach start
                         fScore[startKey] = heuristic(startX, startY, endX, endY); // Estimated total cost
@@ -326,7 +326,7 @@ class _GraphAlgorithmState extends State<GraphAlgorithm> {
 
                           // If we reach the endpoint, reconstruct the path
                           if (x == endX && y == endY) {
-                            return _reconstructPath(parent, startX, startY, endX, endY);
+                            return reconstructPath(parent, startX, startY, endX, endY);
                           }
 
                           // Get neighbors
@@ -394,7 +394,7 @@ class _GraphAlgorithmState extends State<GraphAlgorithm> {
                       });
                       //UCS Algorithm
                       // Function to reconstruct the path from parent map
-                      Future<List<Map<String, int>>> _reconstructPath(Map<String, Map<String, int>> parent, int startX, int startY, int endX, endY) async {
+                      Future<List<Map<String, int>>> reconstructPath(Map<String, Map<String, int>> parent, int startX, int startY, int endX, endY) async {
                         List<Map<String, int>> path = [];
                         String current = '$endX,$endY';
 
@@ -426,7 +426,7 @@ class _GraphAlgorithmState extends State<GraphAlgorithm> {
                         Map<String, Map<String, int>> parent = {}; // Track parent nodes for path reconstruction
 
                         String startKey = '$startX,$startY';
-                        String endKey = '$endX,$endY';
+                        // String endKey = '$endX,$endY';
 
                         cost[startKey] = 0; // Starting cost
                         queue.add({'x': startX, 'y': startY, 'cost': cost[startKey]});
@@ -441,7 +441,7 @@ class _GraphAlgorithmState extends State<GraphAlgorithm> {
 
                           // If we reach the endpoint, reconstruct the path
                           if (x == endX && y == endY) {
-                            return _reconstructPath(parent, startX, startY, endX, endY);
+                            return reconstructPath(parent, startX, startY, endX, endY);
                           }
 
                           // Get neighbors of the current cell
