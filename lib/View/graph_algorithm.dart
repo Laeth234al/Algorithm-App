@@ -20,10 +20,12 @@ class _GraphAlgorithmState extends State<GraphAlgorithm> {
   Maze maze = Maze(24, 24); // Create a 24X24 maze
   bool run = false;
   List<bool> runs = List.filled(7, false);
+  late double valueOfSlider;
   @override
   void initState() {
     super.initState();
     Maze.generateMaze(maze, 0, 0);
+    valueOfSlider = 3.0;
   }
 
   @override
@@ -143,7 +145,7 @@ class _GraphAlgorithmState extends State<GraphAlgorithm> {
                               }
                             }
                           }
-                          await Future.delayed(const Duration(milliseconds: 100));
+                          await Future.delayed(Duration(milliseconds: ((100 / valueOfSlider) * 3).toInt()));
                           maze.cells[y][x].color = Colors.yellow;
                           setState(() {});
                         }
@@ -154,7 +156,7 @@ class _GraphAlgorithmState extends State<GraphAlgorithm> {
                       print(path);
                       for (int i = 0; i < path.length && run; i++) {
                         maze.cells[path[i]['y']!][path[i]['x']!].color = Colors.green;
-                        await Future.delayed(const Duration(milliseconds: 20));
+                        await Future.delayed(Duration(milliseconds: ((20 / valueOfSlider) * 3).toInt()));
                         setState(() {});
                       }
 
@@ -235,7 +237,7 @@ class _GraphAlgorithmState extends State<GraphAlgorithm> {
                                 }
                               }
                             }
-                            await Future.delayed(const Duration(milliseconds: 100));
+                            await Future.delayed(Duration(milliseconds: ((100 / valueOfSlider) * 3).toInt()));
                             maze.cells[y][x].color = Colors.yellow;
                             setState(() {});
                           }
@@ -246,7 +248,7 @@ class _GraphAlgorithmState extends State<GraphAlgorithm> {
                         print(path);
                         for (int i = 0; i < path.length && run; i++) {
                           maze.cells[path[i]['y']!][path[i]['x']!].color = Colors.green;
-                          await Future.delayed(const Duration(milliseconds: 20));
+                          await Future.delayed(Duration(milliseconds: ((20 / valueOfSlider) * 3).toInt()));
                           setState(() {});
                         }
 
@@ -282,7 +284,7 @@ class _GraphAlgorithmState extends State<GraphAlgorithm> {
                           final parts = current.split(',');
                           final x = int.parse(parts[0]);
                           final y = int.parse(parts[1]);
-                          await Future.delayed(const Duration(milliseconds: 50));
+                          await Future.delayed(Duration(milliseconds: ((50 / valueOfSlider) * 3).toInt()));
                           setState(() {
                             maze.cells[y][x].color = Colors.green;
                           });
@@ -361,7 +363,7 @@ class _GraphAlgorithmState extends State<GraphAlgorithm> {
                             }
                           }
 
-                          await Future.delayed(const Duration(milliseconds: 100)); // Delay for visualization
+                          await Future.delayed(Duration(milliseconds: ((100 / valueOfSlider) * 3).toInt())); // Delay for visualization
                           setState(() {
                             maze.cells[y][x].color = Colors.yellow;
                           });
@@ -404,7 +406,7 @@ class _GraphAlgorithmState extends State<GraphAlgorithm> {
                           final y = int.parse(parts[1]);
                           maze.cells[y][x].color = Colors.green;
                           setState(() {});
-                          await Future.delayed(const Duration(milliseconds: 50));
+                          await Future.delayed(Duration(milliseconds: ((50 / valueOfSlider) * 3).toInt()));
                           path.add({'x': x, 'y': y});
 
                           if (x == startX && y == startY) {
@@ -474,7 +476,7 @@ class _GraphAlgorithmState extends State<GraphAlgorithm> {
                             }
                           }
 
-                          await Future.delayed(const Duration(milliseconds: 100)); // Delay for visualization
+                          await Future.delayed(Duration(milliseconds: ((100 / valueOfSlider) * 3).toInt())); // Delay for visualization
                           setState(() {
                             maze.cells[y][x].color = Colors.yellow;
                           });
@@ -524,7 +526,7 @@ class _GraphAlgorithmState extends State<GraphAlgorithm> {
                           setState(() {
                             maze.cells[currentY][currentX].color = Colors.red;
                           });
-                          await Future.delayed(const Duration(milliseconds: 100));
+                          await Future.delayed(Duration(milliseconds: ((100 / valueOfSlider) * 3).toInt()));
                           final neighbors = maze.getNeighbors(currentX, currentY);
 
                           neighbors.sort((a, b) {
@@ -588,7 +590,7 @@ class _GraphAlgorithmState extends State<GraphAlgorithm> {
                           setState(() {
                             maze.cells[y][x].color = Colors.green;
                           });
-                          await Future.delayed(const Duration(milliseconds: 50));
+                          await Future.delayed(Duration(milliseconds: ((50 / valueOfSlider) * 3).toInt()));
                         }
 
                         return path; // Return the path
@@ -644,7 +646,21 @@ class _GraphAlgorithmState extends State<GraphAlgorithm> {
                   ),
                 ],
               ),
-            )
+            ),
+            SizedBox(
+              height: 50.0,
+              child: Slider(
+                onChanged: (val) {
+                  valueOfSlider = val;
+                  print('Slider Value : $val');
+                  setState(() {});
+                },
+                min: 1.0,
+                max: 5.0,
+                divisions: 4,
+                value: valueOfSlider,
+              ),
+            ),
           ],
         ),
       ),
